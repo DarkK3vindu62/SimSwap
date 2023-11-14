@@ -95,3 +95,24 @@ class Face_detect_crop:
         align_img = cv2.warpAffine(img, M, (crop_size, crop_size), borderValue=0.0)
         
         return [align_img], [M]
+
+def get_norm(self, img, crop_size, max_num=0):
+        bboxes, kpss = self.det_model.detect(img,
+                                             threshold=self.det_thresh,
+                                             max_num=max_num,
+                                             metric='default')
+        if bboxes.shape[0] == 0:
+            return None
+
+        det_score = bboxes[..., 4]
+
+        # select the face with the hightest detection score
+        best_index = np.argmax(det_score)
+
+        kps = None
+        if kpss is not None:
+            kps = kpss[best_index]
+        M, _ = face_align.estimate_norm(kps, crop_size, mode = self.mode) 
+        align_img = cv2.warpAffine(img, M, (crop_size, crop_size), borderValue=0.0)
+        
+        return [align_img], np.max(det_score), [M]
